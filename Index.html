@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Munki-D | Root-Sense Oracle</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/arwes@1.0.0-alpha.5/build/arwes.min.css">
+    <style>
+        body { background: #020b16; margin: 0; overflow: hidden; font-family: 'Courier New', monospace; }
+        #canvas-3d { position: absolute; width: 100%; height: 100%; z-index: 1; }
+        .ui-overlay { position: relative; z-index: 10; padding: 20px; color: #00f2ff; pointer-events: none; }
+        .stats-panel { border: 1px solid #00f2ff; background: rgba(0, 242, 255, 0.05); padding: 20px; width: 320px; backdrop-filter: blur(5px); }
+        .crypto-card { margin-bottom: 15px; border-bottom: 1px dashed rgba(0, 242, 255, 0.3); padding-bottom: 5px; }
+        .neon-text { text-shadow: 0 0 10px #00f2ff; font-weight: bold; }
+        .loading { color: yellow; }
+    </style>
+</head>
+<body>
+    <div id="canvas-3d"></div>
+
+    <div class="ui-overlay">
+        <header>
+            <h1 class="neon-text">ROOT-SENSE ENGINE v1.0</h1>
+            <p>Sincronizzazione Oracolo Cosmos... <span id="sync-status" class="loading">IN CORSO</span></p>
+        </header>
+
+        <div class="stats-panel" id="root-display">
+            <h3>LOG RADICI (STAKING ASSETS)</h3>
+            <div id="crypto-list">Caricamento dati blockchain...</div>
+            <hr>
+            <small>Logica: Teoria delle Radici (Marco 2026)<br>Proiezioni Target 2031 attive.</small>
+        </div>
+    </div>
+
+    <script>
+        // 1. CONFIGURAZIONE ORACOLO E TARGET
+        const COSMOS_ASSETS = [
+            { id: 'cosmos', symbol: 'ATOM', target: 162 },
+            { id: 'injective-protocol', symbol: 'INJ', target: 755 },
+            { id: 'akash-network', symbol: 'AKT', target: 152 },
+            { id: 'celestia', symbol: 'TIA', target: 110 },
+            { id: 'stargaze', symbol: 'STARS', target: 0.40 },
+            { id: 'agoric', symbol: 'BLD', target: 8 }
+        ];
+
+        // 2. MOTORE IA "ROOT-SENSE"
+        const RootAI = {
+            project: (currentPrice, target) => {
+                // Calcolo basato su 5 anni di staking (12% APR medio) + Adattamento Governance
+                const kAdatt = 1.15; // Bonus derivante dalle ultime votazioni passate
+                const years = 5;
+                const multiplier = Math.pow(1.12, years) * kAdatt;
+                return (target * multiplier).toFixed(2);
+            }
+        };
+
+        // 3. RECUPERO DATI REALI (ORACOLO)
+        async function fetchPrices() {
+            try {
+                const ids = COSMOS_ASSETS.map(a => a.id).join(',');
+                const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=eur`);
+                const data = await response.json();
+                
+                let html = '';
+                COSMOS_ASSETS.forEach(asset => {
+                    const currentPrice = data[asset.id].eur;
+                    const projection = (asset.target * Math.pow(1.12, 5) * 1.15).toFixed(2);
+                    
+                    html += `
+                        <div class="crypto-card">
+                            <strong>${asset.symbol}</strong>: €${currentPrice.toFixed(2)}<br>
+                            <span style="color: #00ff00">> 2031 Potenziale: €${projection}</span>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('crypto-list').innerHTML = html;
+                document.getElementById('sync-status').innerText = "SINCRONIZZATO";
+                document.getElementById('sync-status').className = "neon-text";
+            } catch (e) {
+                document.getElementById('sync-status').innerText = "OFFLINE (API LIMIT)";
+            }
+        }
+
+        // 4. MOTORE GRAFICO 3D (GLOBE)
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-3d').appendChild(renderer.domElement);
+
+        const geometry = new THREE.SphereGeometry(2, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0x00f2ff, 
+            wireframe: true,
+            transparent: true,
+            opacity: 0.2
+        });
+        const globe = new THREE.Mesh(geometry, material);
+        scene.add(globe);
+
+        // Aggiunta punti luce (Radici)
+        for(let i=0; i<20; i++) {
+            const pGeom = new THREE.SphereGeometry(0.05, 8, 8);
+            const pMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
+            const p = new THREE.Mesh(pGeom, pMat);
+            p.position.set((Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4);
+            globe.add(p);
+        }
+
+        camera.position.z = 5;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            globe.rotation.y += 0.002;
+            globe.rotation.x += 0.001;
+            renderer.render(scene, camera);
+        }
+
+        animate();
+        fetchPrices();
+        setInterval(fetchPrices, 60000); // Aggiorna ogni minuto
+    </script>
+</body>
+                                                             </html>
